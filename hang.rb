@@ -1,7 +1,6 @@
+require "yaml"
+
 class Game
-    def initalize
-        @alphabet = "abcdefghijklmnopqrstuvwxyz"
-    end
 
     def play
         question
@@ -9,6 +8,7 @@ class Game
             return play
         end
         if @result == "1"
+            setting
             return new_game
         else
             return load_game
@@ -17,28 +17,30 @@ class Game
 
     private
 
+
     def question
         puts "Type 1 for a new game or type 2 to load a game."
         @result = gets.chomp
     end
 
-    def new_game
+    def setting
+        @alphabet = "abcdefghijklmnopqrstuvwxyz"
         @game_over = false
         @wrong = 0
         @wrong_char = []
         @guessed_letters = []
         random_word
         generate_dash
-        while @wrong < 6 && !@game_over
-            puts "You have #{6-@wrong} guess(es) left"
-            puts @answer.join(" ")
-            puts "Wrong characters below"
-            puts @wrong_char.join(" ")
-            guess
-            answer_check
-        end
+    end
+
+    public
+
+    def new_game
+        game_loop
         puts @random
     end
+
+    private
 
     def random_word
         File.open("5desk.txt") do |file|
@@ -54,12 +56,24 @@ class Game
         end
     end
 
+    
+
     def guess
-        puts "Choose your letter"
+        puts "Choose your letter or press 1 to save"
         @guess = gets.chomp.downcase
-        if @guessed_letters.include? @guess || @guess.length != 1 || !(@alphabet.include? @guess)
+        if @guess == "1"
+            save
+        elsif @guess.length != 1
             puts "Please choose one letter that you haven't guessed before"
             return guess
+        elsif !@alphabet.include? @guess
+            puts "Please choose one letter that you haven't guessed before"
+            return guess
+        elsif !@guessed_letters.nil?
+            if @guessed_letters.include? @guess
+            puts "Please choose one letter that you haven't guessed before"
+            return guess
+            end
         end
     end
 
@@ -85,6 +99,32 @@ class Game
         end
         if @wrong == 6
             puts "You lost the game"
+        end
+    end
+
+    def save
+        game = YAML::dump(self)
+        File.open("save_game.txt", "w").puts game
+        puts "Game Saved"
+        exit
+    end
+
+    def load_game
+        game = File.read("save_game.txt")
+        game = YAML::load(game)
+        @current = game
+        @current.new_game
+    end
+
+    def game_loop
+        while @wrong < 6 && !@game_over
+            puts "You have #{6-@wrong} guess(es) left"
+            puts @answer.join(" ")
+            puts "Wrong characters below"
+            puts @wrong_char.join(" ")
+            guess
+            puts @guess.length
+            answer_check
         end
     end
 
